@@ -7,22 +7,22 @@
     self,
     nixpkgs,
   }:
-    with nixpkgs.lib; let
-      # List of explicetely unsupported systems
-      explicitelyUnsupportedSystems = [];
+    let
+      # List of explicitly unsupported systems
+      explicitlyUnsupportedSystems = [];
 
       # Packwiz should support all 64-bit systems supported by go, but nix only
       # support strictly less, so all nix-supported systems are included
-      # (except ones in explicitelyUnsupportedSystems).
+      # (except ones in explicitlyUnsupportedSystems).
       supportedSystems =
-        filter
-        # Filter out systems that are explicetely supported
-        (s: ! elem s explicitelyUnsupportedSystems)
+        nixpkgs.lib.filter
+        # Filter out systems that are explicitly supported
+        (s: ! nixpkgs.lib.elem s explicitlyUnsupportedSystems)
         # This lists all systems reasonably well-supported by nix
         (import "${nixpkgs}/lib/systems/flake-systems.nix" {});
 
       # Helper generating outputs for each supported system
-      forAllSystems = genAttrs supportedSystems;
+      forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
 
       # Import nixpkgs' package set for each system.
       nixpkgsFor = forAllSystems (system: import nixpkgs {inherit system;});
@@ -32,8 +32,8 @@
         pkgs = nixpkgsFor.${system};
       in rec {
         packwiz = pkgs.callPackage ./nix {
-          version = substring 0 8 self.rev or "dirty";
-          vendorSha256 = readFile ./nix/vendor-sha256;
+          version = nixpkgs.lib.substring 0 8 self.rev or "dirty";
+          vendorSha256 = nixpkgs.lib.readFile ./nix/vendor-sha256;
           buildGoModule = pkgs.buildGoModule;
             # As of writing, `pkgs.buildGoModule` is aliased to
             # `pkgs.buildGo121Module` in Nixpkgs.
